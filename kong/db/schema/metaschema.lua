@@ -152,6 +152,7 @@ local required_attributes = {
 local attribute_types = {
   between = {
     ["integer"] = true,
+    ["number"] = true,
   },
   len_eq = {
     ["array"]  = true,
