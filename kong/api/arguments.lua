@@ -668,6 +668,16 @@ local function load(opts)
     end
   end
 
+  if options.schema then
+    if options.schema.ttl == true and args.ttl then
+      args.options = {
+        ttl = tonumber(args.ttl) or args.ttl
+      }
+      args.post.ttl = nil
+      args.uri.ttl = nil
+    end
+  end
+
   return args
 end
 

@@ -48,19 +48,20 @@ return {
     -- override to create a new SNI in the PUT /certificates/foo.com (create) case
     PUT = function(self, db, helpers)
       local args = self.args.post
+      local opts = self.args.options
       local cert, err_t, _
       local id = ngx.unescape_uri(self.params.certificates)
 
       -- cert was found via id or sni inside `before` section
       if utils.is_valid_uuid(id) then
-        cert, _, err_t = db.certificates:upsert({ id = id }, args)
+        cert, _, err_t = db.certificates:upsert({ id = id }, args, opts)
 
       else -- create a new cert. Add extra sni if provided on url
         if self.new_put_sni then
           args.snis = Set.values(Set(args.snis or {}) + self.new_put_sni)
           self.new_put_sni = nil
         end
-        cert, _, err_t = db.certificates:insert(args)
+        cert, _, err_t = db.certificates:insert(args, opts)
       end
 
       if err_t then
