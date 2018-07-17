@@ -107,8 +107,16 @@ local function generate_foreign_key_methods(schema)
         return self:row_to_entity(row)
       end
 
-      methods["update_by_" .. name] = function(self, unique_value, entity)
+      methods["update_by_" .. name] = function(self, unique_value, entity, options)
         validate_unique_value(unique_value)
+
+        if type(entity) ~= "table" then
+          error("entity must be a table", 2)
+        end
+
+        if options ~= nil and type(options) ~= "table" then
+          error("options must be a table when specified", 2)
+        end
 
         local entity_to_update, err = self.schema:process_auto_fields(entity, "update")
         if not entity_to_update then
@@ -116,14 +124,14 @@ local function generate_foreign_key_methods(schema)
           return nil, tostring(err_t), err_t
         end
 
-        local ok, errors = self.schema:validate_update(entity_to_update)
+        local ok, errors = self.schema:validate_update(entity_to_update, options)
         if not ok then
           local err_t = self.errors:schema_violation(errors)
           return nil, tostring(err_t), err_t
         end
 
         local row, err_t = self.strategy:update_by_field(name, unique_value,
-                                                         entity_to_update)
+                                                         entity_to_update, options)
         if not row then
           return nil, tostring(err_t), err_t
         end
@@ -138,8 +146,16 @@ local function generate_foreign_key_methods(schema)
         return row
       end
 
-      methods["upsert_by_" .. name] = function(self, unique_value, entity)
+      methods["upsert_by_" .. name] = function(self, unique_value, entity, options)
         validate_unique_value(unique_value)
+
+        if type(entity) ~= "table" then
+          error("entity must be a table", 2)
+        end
+
+        if options ~= nil and type(options) ~= "table" then
+          error("options must be a table when specified", 2)
+        end
 
         local entity_to_upsert, err = self.schema:process_auto_fields(entity, "upsert")
         if not entity_to_upsert then
@@ -148,7 +164,7 @@ local function generate_foreign_key_methods(schema)
         end
 
         entity_to_upsert[name] = unique_value
-        local ok, errors = self.schema:validate_upsert(entity_to_upsert)
+        local ok, errors = self.schema:validate_upsert(entity_to_upsert, options)
         if not ok then
           local err_t = self.errors:schema_violation(errors)
           return nil, tostring(err_t), err_t
@@ -156,7 +172,7 @@ local function generate_foreign_key_methods(schema)
         entity_to_upsert[name] = nil
 
         local row, err_t = self.strategy:upsert_by_field(name, unique_value,
-          entity_to_upsert)
+                                                         entity_to_upsert, options)
         if not row then
           return nil, tostring(err_t), err_t
         end
@@ -317,9 +333,13 @@ function DAO:each(size)
 end
 
 
-function DAO:insert(entity)
+function DAO:insert(entity, options)
   if type(entity) ~= "table" then
     error("entity must be a table", 2)
+  end
+
+  if options ~= nil and type(options) ~= "table" then
+    error("options must be a table when specified", 2)
   end
 
   local entity_to_insert, err = self.schema:process_auto_fields(entity, "insert")
@@ -328,13 +348,13 @@ function DAO:insert(entity)
     return nil, tostring(err_t), err_t
   end
 
-  local ok, errors = self.schema:validate(entity_to_insert)
+  local ok, errors = self.schema:validate_insert(entity_to_insert, options)
   if not ok then
     local err_t = self.errors:schema_violation(errors)
     return nil, tostring(err_t), err_t
   end
 
-  local row, err_t = self.strategy:insert(entity_to_insert)
+  local row, err_t = self.strategy:insert(entity_to_insert, options)
   if not row then
     return nil, tostring(err_t), err_t
   end
@@ -350,13 +370,17 @@ function DAO:insert(entity)
 end
 
 
-function DAO:update(primary_key, entity)
+function DAO:update(primary_key, entity, options)
   if type(primary_key) ~= "table" then
     error("primary_key must be a table", 2)
   end
 
   if type(entity) ~= "table" then
     error("entity must be a table", 2)
+  end
+
+  if options ~= nil and type(options) ~= "table" then
+    error("options must be a table when specified", 2)
   end
 
   local ok, errors = self.schema:validate_primary_key(primary_key)
@@ -371,13 +395,13 @@ function DAO:update(primary_key, entity)
     return nil, tostring(err_t), err_t
   end
 
-  local ok, errors = self.schema:validate_update(entity_to_update)
+  ok, errors = self.schema:validate_update(entity_to_update, options)
   if not ok then
     local err_t = self.errors:schema_violation(errors)
     return nil, tostring(err_t), err_t
   end
 
-  local row, err_t = self.strategy:update(primary_key, entity_to_update)
+  local row, err_t = self.strategy:update(primary_key, entity_to_update, options)
   if not row then
     return nil, tostring(err_t), err_t
   end
@@ -393,13 +417,17 @@ function DAO:update(primary_key, entity)
 end
 
 
-function DAO:upsert(primary_key, entity)
+function DAO:upsert(primary_key, entity, options)
   if type(primary_key) ~= "table" then
     error("primary_key must be a table", 2)
   end
 
   if type(entity) ~= "table" then
     error("entity must be a table", 2)
+  end
+
+  if options ~= nil and type(options) ~= "table" then
+    error("options must be a table when specified", 2)
   end
 
   local ok, errors = self.schema:validate_primary_key(primary_key)
@@ -414,13 +442,13 @@ function DAO:upsert(primary_key, entity)
     return nil, tostring(err_t), err_t
   end
 
-  local ok, errors = self.schema:validate_upsert(entity_to_upsert)
+  ok, errors = self.schema:validate_upsert(entity_to_upsert, options)
   if not ok then
     local err_t = self.errors:schema_violation(errors)
     return nil, tostring(err_t), err_t
   end
 
-  local row, err_t = self.strategy:upsert(primary_key, entity_to_upsert)
+  local row, err_t = self.strategy:upsert(primary_key, entity_to_upsert, options)
   if not row then
     return nil, tostring(err_t), err_t
   end

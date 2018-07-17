@@ -887,6 +887,7 @@ function Schema:validate_primary_key(pk, ignore_others)
 end
 
 
+
 local Set_mt = {
   __index = function(set, key)
     for i, val in ipairs(set) do
@@ -1003,6 +1004,7 @@ end
 -- and runs the global entity checks against the entire table.
 -- @param input The input table.
 -- @param full_check If true, demands entity table to be complete.
+-- @param options The options table.
 -- If false, accepts missing `required` fields when those are not
 -- needed for global checks.
 -- @return True on success.
@@ -1023,7 +1025,7 @@ end
 --     }
 --  }
 -- In all cases, the input table is untouched.
-function Schema:validate(input, full_check)
+function Schema:validate(input, full_check, options)
   if full_check == nil then
     full_check = true
   end
@@ -1047,6 +1049,17 @@ function Schema:validate(input, full_check)
     merge_into_table(field_errors, f_errs)
   end
 
+  if options then
+    if self.ttl == true and options.ttl ~= nil then
+      if type(options.ttl) ~= "number" then
+        field_errors.ttl = validation_errors.NUMBER
+
+      elseif options.ttl < 0 then
+        field_errors.ttl = "value should be greater than or equal to 0"
+      end
+    end
+  end
+
   if next(field_errors) then
     return nil, field_errors
   end
@@ -1062,8 +1075,8 @@ end
 -- On failure, it returns nil and a table containing all errors,
 -- indexed numerically for general errors, and by field name for field errors.
 -- In all cases, the input table is untouched.
-function Schema:validate_insert(input)
-  return self:validate(input, true)
+function Schema:validate_insert(input, options)
+  return self:validate(input, true, options)
 end
 
 
@@ -1076,7 +1089,7 @@ end
 -- On failure, it returns nil and a table containing all errors,
 -- indexed numerically for general errors, and by field name for field errors.
 -- In all cases, the input table is untouched.
-function Schema:validate_update(input)
+function Schema:validate_update(input, options)
 
   -- Monkey-patch some error messages to make it clearer why they
   -- apply during an update. This avoids propagating update-awareness
@@ -1087,7 +1100,7 @@ function Schema:validate_update(input)
   validation_errors.REQUIRED_FOR_ENTITY_CHECK = rfec .. " when updating"
   validation_errors.AT_LEAST_ONE_OF = "when updating, " .. aloo
 
-  local ok, err, err_t = self:validate(input, false)
+  local ok, err, err_t = self:validate(input, false, options)
 
   -- Restore the original error messages
   validation_errors.REQUIRED_FOR_ENTITY_CHECK = rfec
@@ -1105,8 +1118,8 @@ end
 -- On failure, it returns nil and a table containing all errors,
 -- indexed numerically for general errors, and by field name for field errors.
 -- In all cases, the input table is untouched.
-function Schema:validate_upsert(input)
-  return self:validate(input, true)
+function Schema:validate_upsert(input, options)
+  return self:validate(input, true, options)
 end
 
 
