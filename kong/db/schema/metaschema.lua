@@ -137,7 +137,6 @@ local meta_errors = {
   FIELDS_ARRAY = "each entry in fields must be a sub-table",
   FIELDS_KEY = "each key in fields must be a string",
   ENDPOINT_KEY = "value must be a field name",
-  ENDPOINT_KEY_UNIQUE = "endpoint key must be a unique field",
 }
 
 
@@ -299,11 +298,7 @@ local MetaSchema = Schema.new({
       local found = false
       for _, item in ipairs(schema.fields) do
         local k = next(item)
-        local field = item[k]
         if schema.endpoint_key == k then
-          if not field.unique then
-            errors["endpoint_key"] = meta_errors.ENDPOINT_KEY_UNIQUE
-          end
           found = true
           break
         end
