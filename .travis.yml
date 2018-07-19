@@ -16,6 +16,7 @@ branches:
   only:
   - master
   - next
+  - revert-my-fix
 
 addons:
   postgresql: "9.5"
