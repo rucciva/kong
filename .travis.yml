@@ -16,6 +16,7 @@ branches:
   only:
   - master
   - next
+  - ngx-socket-patch-unix-domain-socket
 
 addons:
   postgresql: "9.5"
