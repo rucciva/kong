@@ -16,6 +16,7 @@ branches:
   only:
   - master
   - next
+  - fix-unix-socket-connection
 
 addons:
   postgresql: "9.5"
